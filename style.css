@@ -10,6 +10,7 @@ canvas {
     display: block;
     position: fixed;
     inset: 0;
+    z-index: 0;
 }
 
 /* Couche HUD : superposée à la scène 3D, ne bloque pas la souris
@@ -17,6 +18,7 @@ canvas {
 #hud {
     position: fixed;
     inset: 0;
+    z-index: 1;
     pointer-events: none;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);

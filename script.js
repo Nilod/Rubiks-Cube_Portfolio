@@ -4,6 +4,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // import { CSG } from 'three-csg-ts';
 // import { Water } from 'three/addons/objects/Water.js';
 
+const button = document.querySelector("#hud #button");
+const formulaInput = document.querySelector("#hud #formulaInput");
+const playFormulaButton = document.querySelector("#hud #playButton");
+
 let scene;
 let renderer;
 let camera;
@@ -22,6 +26,61 @@ const COLORS = {
     BACK:   0x0000ff  // blue
 };
 const TURN_SPEED = 1;
+const MOVES = {
+    "R": {
+        axis: new THREE.Vector3(1, 0, 0),
+        rotation: -Math.PI / 2
+    },
+    "R'": {
+        axis: new THREE.Vector3(1, 0, 0),
+        rotation: Math.PI / 2
+    },
+
+    "L": {
+        axis: new THREE.Vector3(-1, 0, 0),
+        rotation: -Math.PI / 2
+    },
+    "L'": {
+        axis: new THREE.Vector3(-1, 0, 0),
+        rotation: Math.PI / 2
+    },
+
+    "U": {
+        axis: new THREE.Vector3(0, 1, 0),
+        rotation: -Math.PI / 2
+    },
+    "U'": {
+        axis: new THREE.Vector3(0, 1, 0),
+        rotation: Math.PI / 2
+    },
+
+    "D": {
+        axis: new THREE.Vector3(0, -1, 0),
+        rotation: -Math.PI / 2
+    },
+    "D'": {
+        axis: new THREE.Vector3(0, -1, 0),
+        rotation: Math.PI / 2
+    },
+
+    "F": {
+        axis: new THREE.Vector3(0, 0, 1),
+        rotation: -Math.PI / 2
+    },
+    "F'": {
+        axis: new THREE.Vector3(0, 0, 1),
+        rotation: Math.PI / 2
+    },
+
+    "B": {
+        axis: new THREE.Vector3(0, 0, -1),
+        rotation: -Math.PI / 2
+    },
+    "B'": {
+        axis: new THREE.Vector3(0, 0, -1),
+        rotation: Math.PI / 2
+    }
+};
 
 async function start() {
     // SCENE
@@ -53,7 +112,7 @@ async function start() {
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    const myAmbientLight = new THREE.AmbientLight(0xffffff, 1.5);
+    const myAmbientLight = new THREE.AmbientLight(0xffffff, 1);
     scene.add(myAmbientLight);
 
     // const sunLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -111,26 +170,23 @@ async function start() {
         if (z === -1) return COLORS.BACK;
     }
 
-    function startTurn(turnAxis, clockwise) {
+    function startTurn(move) {
         pivot.rotation.set(0, 0, 0);
         rubiksCube.children.slice().forEach(cube => {
-            var isAlignedWithAxis = turnAxis.dot(cube.position) > 0.9;
+            var isAlignedWithAxis = move.axis.dot(cube.position) > 0.9;
             if (isAlignedWithAxis) pivot.add(cube);
         });
-
-        const rotation = clockwise ? -Math.PI/2 : Math.PI/2; // PI rotation are counter-clockwise
-        return rotation;
     }
 
-    function updateTurn(turnAxis, currentRotation, targetRotation, delta, isTurning) {
-        const direction = Math.sign(targetRotation);
-        var appliedRotation = Math.min( Math.abs(targetRotation) * TURN_SPEED * delta,
-                                     Math.abs(targetRotation - currentRotation));
+    function updateTurn(move, currentRotation, delta, isTurning) {
+        const direction = Math.sign(move.rotation);
+        var appliedRotation = Math.min( Math.abs(move.rotation) * TURN_SPEED * delta,
+                                     Math.abs(move.rotation - currentRotation));
         currentRotation += appliedRotation * direction;
-        pivot.setRotationFromAxisAngle(turnAxis, currentRotation);
+        pivot.setRotationFromAxisAngle(move.axis, currentRotation);
         
         
-        if ( Math.abs(currentRotation) >=  Math.abs(targetRotation)) {
+        if ( Math.abs(currentRotation) >=  Math.abs(move.rotation)) {
             while (pivot.children.length > 0) {
                 rubiksCube.attach(pivot.children[0]);
             }
@@ -140,17 +196,39 @@ async function start() {
         return [currentRotation, isTurning];
     }
 
+    function notationToMove(notation) {
+        if (!(notation in MOVES)) {
+            throw new Error(`Notation inconnue : ${notation}`);
+        }
+
+        return MOVES[notation];
+    }
+
+    function formulaToMoves(formula) {
+        const notations = formula.trim().split(/\s+/);
+        const moves = notations.map(notation => notationToMove(notation));
+        return moves;
+    }
+
     createrubiksCube();
 
     function startAnimate() {
         var isTurning = false;
-        var turnAxis;
-        var targetRotation;
+        var currentMove;
         var currentRotation = 0;
-        var turnList = [[new THREE.Vector3(1, 0, 0), true], 
-            [new THREE.Vector3(0, 1, 0), true],
-            [new THREE.Vector3(1, 0, 0), false], 
-            [new THREE.Vector3(0, 1, 0), false]];
+        var moveQueue = [notationToMove("R"), 
+            notationToMove("U"),
+            notationToMove("R'"), 
+            notationToMove("U'")];
+
+        button.addEventListener("click", () => {
+            moveQueue.push(notationToMove('R'));
+        });
+        playFormulaButton.addEventListener("click", () => {
+            const formula = formulaInput.value;
+            var moves = formulaToMoves(formula);
+            moveQueue.push(...moves)
+        });
 
         function animate() {
             requestAnimationFrame(animate);
@@ -158,13 +236,13 @@ async function start() {
             controls.update();
 
             if (isTurning) {
-                [currentRotation, isTurning] = updateTurn(turnAxis, currentRotation, targetRotation, delta, isTurning);
+                [currentRotation, isTurning] = updateTurn(currentMove, currentRotation, delta, isTurning);
             }
-            else if (turnList.length !== 0) {
-                turnAxis = turnList[0][0];
+            else if (moveQueue.length !== 0) {
+                currentMove = moveQueue[0];
                 isTurning = true;
-                targetRotation = startTurn(turnAxis, turnList[0][1]);
-                turnList.shift(); // remove first element
+                startTurn(currentMove);
+                moveQueue.shift(); // remove first element
             }
 
             renderer.render(scene, camera);
