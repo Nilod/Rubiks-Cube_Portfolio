@@ -53,13 +53,13 @@ async function start() {
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    const myAmbientLight = new THREE.AmbientLight(0xffffff, 2);
+    const myAmbientLight = new THREE.AmbientLight(0xffffff, 1.5);
     scene.add(myAmbientLight);
 
-    const sunLight = new THREE.DirectionalLight(0xffffff, 0.08);
-    sunLight.position.set(-100, 1000, -200);
-    sunLight.castShadow = true;
-    scene.add(sunLight);
+    // const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+    // sunLight.position.set(-100, 1000, -200);
+    // sunLight.castShadow = true;
+    // scene.add(sunLight);
 
     function createCube() { // Create a 1 radius cube
         const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
@@ -112,40 +112,68 @@ async function start() {
     }
 
     function startTurn(turnAxis, clockwise) {
-        var turnList = [];
+        pivot.rotation.set(0, 0, 0);
         rubiksCube.children.slice().forEach(cube => {
             var isAlignedWithAxis = turnAxis.dot(cube.position) > 0.9;
             if (isAlignedWithAxis) pivot.add(cube);
         });
 
         const rotation = clockwise ? -Math.PI/2 : Math.PI/2; // PI rotation are counter-clockwise
-        pivot.setRotationFromAxisAngle(turnAxis, rotation);
-        while (pivot.children.length > 0) {
-            rubiksCube.attach(pivot.children[0]);
-        }
+        return rotation;
     }
 
-    function updateTurn() {
+    function updateTurn(turnAxis, currentRotation, targetRotation, delta, isTurning) {
+        const direction = Math.sign(targetRotation);
+        var appliedRotation = Math.min( Math.abs(targetRotation) * TURN_SPEED * delta,
+                                     Math.abs(targetRotation - currentRotation));
+        currentRotation += appliedRotation * direction;
+        pivot.setRotationFromAxisAngle(turnAxis, currentRotation);
         
-
+        
+        if ( Math.abs(currentRotation) >=  Math.abs(targetRotation)) {
+            while (pivot.children.length > 0) {
+                rubiksCube.attach(pivot.children[0]);
+            }
+            isTurning = false;
+            currentRotation = 0
+        }
+        return [currentRotation, isTurning];
     }
 
     createrubiksCube();
-    startTurn(new THREE.Vector3(1, 0, 0), true);
-    startTurn(new THREE.Vector3(0, 1, 0), true);
-    startTurn(new THREE.Vector3(1, 0, 0), false);
-    startTurn(new THREE.Vector3(0, 1, 0), false);
 
-    function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
+    function startAnimate() {
+        var isTurning = false;
+        var turnAxis;
+        var targetRotation;
+        var currentRotation = 0;
+        var turnList = [[new THREE.Vector3(1, 0, 0), true], 
+            [new THREE.Vector3(0, 1, 0), true],
+            [new THREE.Vector3(1, 0, 0), false], 
+            [new THREE.Vector3(0, 1, 0), false]];
 
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            controls.update();
 
+            if (isTurning) {
+                [currentRotation, isTurning] = updateTurn(turnAxis, currentRotation, targetRotation, delta, isTurning);
+            }
+            else if (turnList.length !== 0) {
+                turnAxis = turnList[0][0];
+                isTurning = true;
+                targetRotation = startTurn(turnAxis, turnList[0][1]);
+                turnList.shift(); // remove first element
+            }
 
-        renderer.render(scene, camera);
+            renderer.render(scene, camera);
+        }
+
+        animate();
     }
 
-    animate();
+    startAnimate();
 }
 
 start();
