@@ -1,0 +1,27 @@
+html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #111111;
+}
+
+/* Le canvas Three.js est injecté par renderer.domElement dans <body> */
+canvas {
+    display: block;
+    position: fixed;
+    inset: 0;
+}
+
+/* Couche HUD : superposée à la scène 3D, ne bloque pas la souris
+   sauf sur les éléments d'interface que tu y ajouteras */
+#hud {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+#hud > * {
+    pointer-events: auto;
+}
