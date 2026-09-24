@@ -7,6 +7,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const button = document.querySelector("#hud #button");
 const formulaInput = document.querySelector("#hud #formulaInput");
 const playFormulaButton = document.querySelector("#hud #playButton");
+const speedInput = document.querySelector("#speedInput");
+const speedRange = document.querySelector("#speedRange");
 
 let scene;
 let renderer;
@@ -25,7 +27,7 @@ const COLORS = {
     FRONT:  0x00ff00, // green
     BACK:   0x0000ff  // blue
 };
-const TURN_SPEED = 1;
+var turnSpeed = 1;
 const MOVES = {
     "R": {
         axis: new THREE.Vector3(1, 0, 0),
@@ -81,6 +83,20 @@ const MOVES = {
         rotation: Math.PI / 2
     }
 };
+
+// EVENTS
+speedInput.addEventListener("keydown", (event) => {
+
+    if (event.key === "Enter") {
+        speedRange.value = speedInput.value;
+        turnSpeed = speedInput.value;
+    }
+});
+
+speedRange.addEventListener("input", () => {
+    speedInput.value = speedRange.value;
+    turnSpeed = speedRange.value;
+});
 
 async function start() {
     // SCENE
@@ -180,7 +196,7 @@ async function start() {
 
     function updateTurn(move, currentRotation, delta, isTurning) {
         const direction = Math.sign(move.rotation);
-        var appliedRotation = Math.min( Math.abs(move.rotation) * TURN_SPEED * delta,
+        var appliedRotation = Math.min( Math.abs(move.rotation) * turnSpeed * delta,
                                      Math.abs(move.rotation - currentRotation));
         currentRotation += appliedRotation * direction;
         pivot.setRotationFromAxisAngle(move.axis, currentRotation);
