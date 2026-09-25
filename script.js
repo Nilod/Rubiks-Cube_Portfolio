@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 // import { CSG } from 'three-csg-ts';
 // import { Water } from 'three/addons/objects/Water.js';
 
-const button = document.querySelector("#hud #button");
+const rButton = document.querySelector("#hud #rButton");
 const formulaInput = document.querySelector("#hud #formulaInput");
 const playFormulaButton = document.querySelector("#hud #playButton");
 const speedInput = document.querySelector("#speedInput");
@@ -37,6 +37,10 @@ const MOVES = {
         axis: new THREE.Vector3(1, 0, 0),
         rotation: Math.PI / 2
     },
+    "R2": {
+        axis: new THREE.Vector3(1, 0, 0),
+        rotation: -Math.PI
+    },
 
     "L": {
         axis: new THREE.Vector3(-1, 0, 0),
@@ -45,6 +49,10 @@ const MOVES = {
     "L'": {
         axis: new THREE.Vector3(-1, 0, 0),
         rotation: Math.PI / 2
+    },
+    "L2": {
+        axis: new THREE.Vector3(-1, 0, 0),
+        rotation: -Math.PI
     },
 
     "U": {
@@ -55,6 +63,10 @@ const MOVES = {
         axis: new THREE.Vector3(0, 1, 0),
         rotation: Math.PI / 2
     },
+    "U2": {
+        axis: new THREE.Vector3(0, 1, 0),
+        rotation: -Math.PI
+    },
 
     "D": {
         axis: new THREE.Vector3(0, -1, 0),
@@ -63,6 +75,10 @@ const MOVES = {
     "D'": {
         axis: new THREE.Vector3(0, -1, 0),
         rotation: Math.PI / 2
+    },
+    "D2": {
+        axis: new THREE.Vector3(0, -1, 0),
+        rotation: -Math.PI
     },
 
     "F": {
@@ -73,6 +89,10 @@ const MOVES = {
         axis: new THREE.Vector3(0, 0, 1),
         rotation: Math.PI / 2
     },
+    "F2": {
+        axis: new THREE.Vector3(0, 0, 1),
+        rotation: -Math.PI
+    },
 
     "B": {
         axis: new THREE.Vector3(0, 0, -1),
@@ -81,6 +101,10 @@ const MOVES = {
     "B'": {
         axis: new THREE.Vector3(0, 0, -1),
         rotation: Math.PI / 2
+    },
+    "B2": {
+        axis: new THREE.Vector3(0, 0, -1),
+        rotation: -Math.PI
     }
 };
 
@@ -187,7 +211,7 @@ function formulaToMoves(formula) {
 }
 
 function setupControls(state) {
-    button.addEventListener("click", () => {
+    rButton.addEventListener("click", () => {
         state.moveQueue.push(notationToMove('R'));
     });
 
